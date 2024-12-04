@@ -1,0 +1,33 @@
+Analysis started. K=14, Sketch Size=1000
+Step 1 - Reading FASTA files and calculating kmer counts
+	Reading R6.fa...
+	Extracting kmers from R6.fa...
+	Reading TIGR4.fa...
+	Extracting kmers from TIGR4.fa...
+	Reading 14412_3#82.contigs_velvet.fa...
+	Extracting kmers from 14412_3#82.contigs_velvet.fa...
+	Reading 14412_3#84.contigs_velvet.fa...
+	Extracting kmers from 14412_3#84.contigs_velvet.fa...
+Step 2 - Calculating Jaccard distance between the two pairs
+	Jaccard distance between R6.fa and TIGR4.fa: 0.9743687595195952
+
+	Jaccard distance between 14412_3#82.contigs_velvet.fa and 14412_3#84.contigs_velvet.fa: 0.5607237519725111
+
+Step 4 - Creating a Sketch from input sequences
+	Making sketch for R6.fa with size 1000
+	Saved sketch to output/R6.fa_sketch_1000.npy.
+	Making sketch for TIGR4.fa with size 1000
+	Saved sketch to output/TIGR4.fa_sketch_1000.npy.
+	Making sketch for 14412_3#82.contigs_velvet.fa with size 1000
+	Saved sketch to output/14412_3#82.contigs_velvet.fa_sketch_1000.npy.
+	Making sketch for 14412_3#84.contigs_velvet.fa with size 1000
+	Saved sketch to output/14412_3#84.contigs_velvet.fa_sketch_1000.npy.
+Step 5 - Calculating Jaccard distance between the sketches
+	Jaccard distance between R6.fa and TIGR4.fa sketches: 0.2677304964539007
+	Jaccard distance between R6.fa and 14412_3#82.contigs_velvet.fa sketches: 0.9774396642182581
+	Jaccard distance between R6.fa and 14412_3#84.contigs_velvet.fa sketches: 0.9785227867993714
+	Jaccard distance between TIGR4.fa and 14412_3#82.contigs_velvet.fa sketches: 0.9806282722513089
+	Jaccard distance between TIGR4.fa and 14412_3#84.contigs_velvet.fa sketches: 0.9811715481171548
+	Jaccard distance between 14412_3#82.contigs_velvet.fa and 14412_3#84.contigs_velvet.fa sketches: 0.30008748906386706
+(Bonus) Step 6 - Constructing a phylogenetic tree based on the distances
+	Phylogenetic tree saved to output/NJ_tree_k14_sketch1000.txt.
