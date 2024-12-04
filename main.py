@@ -5,14 +5,17 @@
 import os
 import re
 import argparse
+import itertools
 import numpy as np
 import pandas as pd
+
 from tqdm import tqdm
 
 tqdm.pandas()  # Enables progress_apply
 
-from Bio import SeqIO  # For reading FASTA files
 import mmh3  # For Murmur hashing
+from Bio import SeqIO, Phylo  # For reading FASTA files and drawing trees
+from Bio.Phylo.TreeConstruction import DistanceTreeConstructor, DistanceMatrix
 
 # Constants
 FILE_PATHS = [
@@ -98,6 +101,26 @@ def jaccard_distance(kmers1, kmers2) -> float:
     return 1 - len(set(kmers1) & set(kmers2)) / len(set(kmers1) | set(kmers2))
 
 
+def evaluate_neighbour_joining(dist_matrix: np.array, names: list, output_path: str, msg: str) -> None:
+    """
+    Constructs a phylogenetic tree from the given distance matrix and names,
+    and saves it to the given output path followed by the given message.
+    """
+    dist_matrix = [
+        [0],
+        [dist_matrix[0, 1], 0],
+        [dist_matrix[0, 2], dist_matrix[1, 2], 0],
+        [dist_matrix[0, 3], dist_matrix[1, 3], dist_matrix[2, 3], 0]
+    ]
+    dist_matrix = DistanceMatrix(names=names, matrix=dist_matrix)
+    tree = DistanceTreeConstructor().nj(dist_matrix)
+
+    with open(output_path, "a") as f:
+        f.write(f"{msg}\n")
+        Phylo.draw_ascii(tree, file=f)
+        f.write("\n\n")
+
+
 def read_fasta(file_path) -> list:
     """
     Reads the FASTA file at the given path and returns a SeqRecord iterator.
@@ -122,9 +145,13 @@ def main(args) -> None:
         kmer_counts[file_path] = kmers_count
 
     dprint("Step 2 - Calculating Jaccard distance between the two pairs")
-    for pair in [(0, 1), (2, 3)]:  # Indices in the paths list
+    full_distance_matrix = np.zeros((4, 4))
+    for pair in itertools.combinations(range(4), 2):  # Indices in the paths list   
         distance = jaccard_distance(kmer_counts[FILE_PATHS[pair[0]]].keys(), kmer_counts[FILE_PATHS[pair[1]]].keys())
-        dprint(f"\tJaccard distance between {FILE_PATHS[pair[0]]} and {FILE_PATHS[pair[1]]}: {distance}\n")
+        full_distance_matrix[pair[0], pair[1]] = distance
+    for pair in [(0, 1), (2, 3)]:  # References and drafts
+        dprint(f"\tJaccard distance between {FILE_PATHS[pair[0]]} and {FILE_PATHS[pair[1]]}: "
+               + f"{full_distance_matrix[pair[0], pair[1]]}\n")
 
     dprint("Step 3 - Calculating MinHash signatures")
     for file_path in FILE_PATHS:
@@ -141,12 +168,20 @@ def main(args) -> None:
         np.save(output_sketch_path, sketch)
         dprint(f"\tSaved sketch to {output_sketch_path}.")
 
-    dprint("Step 5 - Calculating Jaccard distance between the two sketches")
-    for pair in [(0, 1), (2, 3)]:  # Indices in the paths list
+    dprint("Step 5 - Calculating Jaccard distance between the sketches")
+    jaccard_distance_matrix = np.zeros((4, 4))
+    for pair in itertools.combinations(range(4), 2):  # Indices in the paths list
         sketch1 = np.load(f"{args.output_dir}/{FILE_PATHS[pair[0]]}_sketch_{args.sketch_size}.npy")
         sketch2 = np.load(f"{args.output_dir}/{FILE_PATHS[pair[1]]}_sketch_{args.sketch_size}.npy")
         distance = jaccard_distance(sketch1, sketch2)
+        jaccard_distance_matrix[pair[0], pair[1]] = distance
         dprint(f"\tJaccard distance between {FILE_PATHS[pair[0]]} and {FILE_PATHS[pair[1]]} sketches: {distance}")
+
+    dprint("(Bonus) Step 6 - Constructing a phylogenetic tree based on the distances")
+    output_tree_path = f"{args.output_dir}/NJ_tree_k{args.kmer_size}_sketch{args.sketch_size}.txt"
+    evaluate_neighbour_joining(jaccard_distance_matrix, FILE_PATHS, output_tree_path, "Sketch Distance")
+    evaluate_neighbour_joining(full_distance_matrix, FILE_PATHS, output_tree_path, "Full Distance")
+    dprint(f"\tPhylogenetic tree saved to {output_tree_path}.")
 
 
 def parse_args() -> argparse.Namespace:
