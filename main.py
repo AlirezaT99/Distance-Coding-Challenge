@@ -107,6 +107,7 @@ def read_fasta(file_path) -> list:
 
 
 def main(args) -> None:
+    dprint(f"Analysis started. K={args.kmer_size}, Sketch Size={args.sketch_size}")
     dprint("Step 1 - Reading FASTA files and calculating kmer counts")
     kmer_counts = dict()  # Storing the kmer counts dict for each file
     kmers_dict = dict()
