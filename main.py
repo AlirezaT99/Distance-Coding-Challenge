@@ -9,13 +9,12 @@ import itertools
 import numpy as np
 import pandas as pd
 
-from tqdm import tqdm
-
-tqdm.pandas()  # Enables progress_apply
-
 import mmh3  # For Murmur hashing
 from Bio import SeqIO, Phylo  # For reading FASTA files and drawing trees
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor, DistanceMatrix
+from tqdm import tqdm
+
+tqdm.pandas()  # Enables progress_apply
 
 # Constants
 FILE_PATHS = [
@@ -24,19 +23,31 @@ FILE_PATHS = [
     "14412_3#82.contigs_velvet.fa",
     "14412_3#84.contigs_velvet.fa"
 ]
+DEBUG = True
 DEFAULT_KMER_SIZE = 14
 DEFAULT_SKETCH_SIZE = 1000
 COMPLEMENTS = {"A": "T", "T": "A", "C": "G", "G": "C"}
 
-DEBUG = True
-output = ""
 
+class Logger:
+    """
+    A logger class that writes messages to a file
+    and optionally prints them to the console.
+    """
 
-def dprint(msg) -> None:
-    global output
-    output += msg + "\n"
-    if DEBUG:
-        print(msg)
+    def __init__(self, file_path, output="", debug=False):
+        self.file_path = file_path
+        self.output = output
+        self.debug = debug
+
+    def save_output(self) -> None:
+        with open(self.file_path, "w") as f:
+            f.write(self.output)
+
+    def dprint(self, msg) -> None:
+        self.output += msg + "\n"
+        if self.debug:
+            print(msg)
 
 
 def extract_kmers(sequences: list, kmer_size: int) -> pd.Series:
@@ -190,6 +201,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--kmer-size", "-k", type=int, help="K-mer size", default=DEFAULT_KMER_SIZE)
     parser.add_argument("--sketch-size", "-s", type=int, help="Sketch size", default=DEFAULT_SKETCH_SIZE)
     parser.add_argument("--output-dir", "-o", type=str, help="Output directory path", default="output")
+    parser.add_argument("--debug", "-v", type=bool, help="Enable verbose output", default=DEBUG)
     return parser.parse_args()
 
 
@@ -197,12 +209,13 @@ if __name__ == "__main__":
     args = parse_args()
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
+    output_log_path = os.path.join(args.output_dir, f"log-{pd.Timestamp.now().strftime('%H-%M-%S')}.txt")
+    logger = Logger(output_log_path, debug=args.debug)
+    dprint = logger.dprint
     try:
         main(args)
     except Exception as e:
         dprint(f"An error occurred: {e}")
     finally:
-        output_log_path = os.path.join(args.output_dir, f"log-{pd.Timestamp.now().strftime('%H-%M-%S')}.txt")
-        with open(output_log_path, "w") as file:
-            file.write(output)
+        logger.save_output()
         print(f"Log written to {output_log_path}.")
