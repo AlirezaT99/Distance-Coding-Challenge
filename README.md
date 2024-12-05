@@ -23,6 +23,6 @@ python main.py --data-dir "s_pneumoniae_genomes" -k 14 -s 1000
 - Enlarging the sketch size will result in a more stable estimation of the Jaccard full distances.
 - Increasing the sketch size results in more stable (and more costly) approximations of the full Jaccard distances.
 ### Neighbour-Joining Tree
-- The neighbor-joining (NJ) tree construction, implemented using Biopython, is included as the [6th step](main.py#L180-L184) in the code. Trees are generated using both full Jaccard distances and MinHash distances, and the outputs are visualized in the same file (sample output [here](./output/NJ_tree_k14_sketch1000.txt)).
+- The neighbor-joining (NJ) tree construction, implemented using Biopython, is included as the [6th step](main.py#L191-L195) in the code. Trees are generated using both full Jaccard distances and MinHash distances, and the outputs are visualized in the same file (sample output [here](./output/NJ_tree_k14_sketch1000.txt)).
 - Based on the sample results, the MinHash distances provide a more reasonable separation between the reference and draft pairs. In other words, Distances within each reference or draft pair are reduced, reflecting closer relationships, while distances between the reference and draft pairs are increased, indicating clearer separation.
 - This adjustment aligns better with biological expectations, justifying our choice of approach and input parameters.
